@@ -1,7 +1,7 @@
 import keyboard
 import pyautogui
-import pyperclip
 import time
+import threading
 
 print("Script started")
 
@@ -9,59 +9,56 @@ print("Script started")
 try:
     with open("sentences.txt", "r", encoding="utf-8") as f:
         sentences = f.read().strip().split("\n")
+    print(f"Loaded {len(sentences)} sentences from 'sentences.txt'")
 except FileNotFoundError:
     print("Error: The file 'sentences.txt' was not found. Please make sure it exists in the script's directory.")
     sentences = []
 
 index = -1  # Ініціалізація перед першим реченням
+print(f"Initial index: {index}")
 
 def type_sentence():
-    """Копіює поточне речення в буфер обміну та вставляє його через Ctrl + V."""
+    """Друкує речення символ за символом."""
+    global index
+    print(f"Typing sentence at index: {index}")
+
     if 0 <= index < len(sentences):
-        pyperclip.copy(sentences[index])
+        sentence = sentences[index]
+        print(f"Sentence to type: {sentence}")
+        pyautogui.typewrite(sentence, interval=0.05)  # Повільний друк для надійності
     else:
-        keyboard.write(pyperclip.paste())
-        time.sleep(0.1)
-    
-    # Копіюємо поточне речення в буфер обміну
-    pyperclip.copy(sentences[index])
-    
-    # Вставляємо через Ctrl + V
-    pyautogui.hotkey("ctrl", "v")
+        print("Index out of range or invalid.")
+
     pyautogui.press("enter")
 
 def next_sentence():
-    """Переключається до наступного речення та вставляє його."""
+    """Переключається до наступного речення та друкує його."""
+    global index
+    if index < len(sentences) - 1:
+        index += 1
+        type_sentence()
+    else:
+        print("No more sentences.")
+
+def prev_sentence():
+    """Переключається до попереднього речення та друкує його."""
     global index
     if index > 0:
         index -= 1
         type_sentence()
-    elif index == -1:
-        print("The program is actively waiting for hotkey inputs.")
-
-def prev_sentence():
-    """Переключається до попереднього речення та вставляє його."""
-    global index
-    if index > 0:
-        index -= 1
-keyboard.add_hotkey("End", next_sentence)  # Перше натискання надрукує "Sentense 1"
-
-import threading
+    else:
+        print("Already at the beginning.")
 
 def wait_for_exit():
-    keyboard.wait("esc")  # Чекаємо натискання Escape для виходу
-    print("Exiting program...")
+    keyboard.wait("esc")
+    print("Exiting...")
     exit()
 
-# Запускаємо очікування натискання Escape в окремому потоці
 exit_thread = threading.Thread(target=wait_for_exit, daemon=True)
 exit_thread.start()
-print("Hotkeys:")
-print("- End → type the next sentence")
-print("- Home → go back to the previous sentence")
-print("- Esc → exit")
 
-# Використовуємо клавіші для керування
-keyboard.add_hotkey("End", lambda: next_sentence() if index != -1 else next_sentence())  # Перше натискання надрукує "Sentense 1"
-keyboard.add_hotkey("Home", prev_sentence)  # Натискання Home друкує попереднє речення
-keyboard.wait("esc")  # Чекаємо натискання Escape для виходу
+print("Hotkeys: End → next | Home → previous | Esc → exit")
+
+keyboard.add_hotkey("End", lambda: next_sentence() if index != -1 else next_sentence())
+keyboard.add_hotkey("Home", prev_sentence)
+keyboard.wait("esc")
