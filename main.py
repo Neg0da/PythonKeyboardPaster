@@ -1,6 +1,6 @@
 import keyboard
 import pyautogui
-import time
+import pyperclip
 import threading
 import config
 
@@ -24,40 +24,54 @@ def load_sentences(filename="sentences.txt"):
     except FileNotFoundError:
         print(f"Error: '{filename}' not found")
         return []
-
-def type_sentence():
-    """Друкує речення символ за символом."""
-    global index
-    index += 1
-    debug(f"Typing sentence at index: {index}")
-
-    if index < len(sentences):
-        sentence = sentences[index]
-        debug(f"Sentence to type: {sentence}")
-        pyautogui.typewrite(sentence, interval=0.05)
-        debug("Sentence typed")
-    else:
-        debug("Index out of range or invalid.")
-
-    pyautogui.press("enter")
-    debug("Enter pressed")
+    
+def paste(text: str):
+    if(config.MAKE_BUFER):
+        bufer = pyperclip.paste()
+    pyperclip.copy(text)
+    pyautogui.hotkey("ctrl", "shift", "v")
+    if(config.ENTER_AFTER_PASTE):
+        pyautogui.press("enter")
+    if(config.MAKE_BUFER):
+        pyperclip.copy(bufer)
 
 def next_sentence():
     """Переключається до наступного речення та друкує його."""
     global index
-    if index < len(sentences):
+    if index < len(sentences) - 1:
         index += 1
-        type_sentence()
+        paste(sentences[index])
     else:
-        index = -1
+        index = 0
         debug("No more sentences. Restarting...")
+        paste(sentences[index])
+
+def previous_sentence():
+    """Переключається до попереднього речення та друкує його."""
+    global index
+    if index > 0:
+        index -= 1
+        if(config.ENTER_BEFORE_PREVIOUS):
+            pyautogui.press("enter")
+        paste(sentences[index])
+    else:
+        index = 0
+        debug("It's the first sentence. Can't go back.")
+        if(config.ENTER_BEFORE_PREVIOUS):
+            pyautogui.press("enter")
+        paste(sentences[index])
 
 sentences = load_sentences()
 debug(sentences)
 
 print("ESC - to exit")
 print("RIGHT - to type sentence")
+print("LEFT - to type previous sentence")
 
-keyboard.add_hotkey("right", lambda: threading.Thread(target=next_sentence).start())
+def run_in_thread(func):
+    threading.Thread(target=func, daemon=True).start()
+
+keyboard.add_hotkey("right", lambda: run_in_thread(next_sentence))
+keyboard.add_hotkey("left", lambda: run_in_thread(previous_sentence))
 keyboard.wait("esc")
 
