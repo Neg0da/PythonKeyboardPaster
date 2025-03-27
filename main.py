@@ -1,67 +1,80 @@
+#main.py
+
 import keyboard
 import pyautogui
 import pyperclip
-import time
+import threading
+import config
 
 print("Script started")
 
-# Читаємо файл як список рядків
-try:
-    with open("sentences.txt", "r", encoding="utf-8") as f:
-        sentences = f.read().strip().split("\n")
-except FileNotFoundError:
-    print("Error: The file 'sentences.txt' was not found. Please make sure it exists in the script's directory.")
-    sentences = []
+def debug(*args):
+    """If DEBUG is enabled - print it in console."""
+    if config.DEBUG:
+        print(*args)
 
-index = -1  # Ініціалізація перед першим реченням
+index = -1
+debug(f"Initial index: {index}")
 
-def type_sentence():
-    """Копіює поточне речення в буфер обміну та вставляє його через Ctrl + V."""
-    if 0 <= index < len(sentences):
-        pyperclip.copy(sentences[index])
-    else:
-        keyboard.write(pyperclip.paste())
-        time.sleep(0.1)
+def load_sentences(filename="sentences.txt"):
+    """Loading sentences from file."""
+    try:
+        with open(filename, "r", encoding="utf-8") as f:
+            sentences = f.read().strip().split("\n")
+        print(f"Loaded {len(sentences)} sentences from '{filename}'")
+        return sentences
+    except FileNotFoundError:
+        print(f"Error: '{filename}' not found")
+        return []
     
-    # Копіюємо поточне речення в буфер обміну
-    pyperclip.copy(sentences[index])
-    
-    # Вставляємо через Ctrl + V
-    pyautogui.hotkey("ctrl", "v")
-    pyautogui.press("enter")
+def paste(text: str):
+    """Paste sentence."""
+    if(config.MAKE_BUFER):
+        bufer = pyperclip.paste()
+    pyperclip.copy(text)
+    pyautogui.hotkey("ctrl", "shift", "v")
+    if(config.ENTER_AFTER_PASTE):
+        pyautogui.press("enter")
+    if(config.MAKE_BUFER):
+        pyperclip.copy(bufer)
 
 def next_sentence():
-    """Переключається до наступного речення та вставляє його."""
+    """Switch to next sentence and paste it."""
+    global index
+    if index < len(sentences) - 1:
+        index += 1
+        paste(sentences[index])
+    else:
+        index = 0
+        debug("No more sentences. Restarting...")
+        paste(sentences[index])
+
+def previous_sentence():
+    """Switch to previous sentence and paste it."""
     global index
     if index > 0:
         index -= 1
-        type_sentence()
-    elif index == -1:
-        print("The program is actively waiting for hotkey inputs.")
+        if(config.ENTER_BEFORE_PREVIOUS):
+            pyautogui.press("enter")
+        paste(sentences[index])
+    else:
+        index = 0
+        debug("It's the first sentence. Can't go back.")
+        if(config.ENTER_BEFORE_PREVIOUS):
+            pyautogui.press("enter")
+        paste(sentences[index])
 
-def prev_sentence():
-    """Переключається до попереднього речення та вставляє його."""
-    global index
-    if index > 0:
-        index -= 1
-keyboard.add_hotkey("End", next_sentence)  # Перше натискання надрукує "Sentense 1"
+sentences = load_sentences()
+debug(sentences)
 
-import threading
+print("ESC - to exit")
+print("RIGHT - to paste sentence")
+print("LEFT - to paste previous sentence")
 
-def wait_for_exit():
-    keyboard.wait("esc")  # Чекаємо натискання Escape для виходу
-    print("Exiting program...")
-    exit()
+def run_in_thread(func):
+    threading.Thread(target=func, daemon=True).start()
 
-# Запускаємо очікування натискання Escape в окремому потоці
-exit_thread = threading.Thread(target=wait_for_exit, daemon=True)
-exit_thread.start()
-print("Hotkeys:")
-print("- End → type the next sentence")
-print("- Home → go back to the previous sentence")
-print("- Esc → exit")
+keyboard.add_hotkey("right", lambda: run_in_thread(next_sentence))
+keyboard.add_hotkey("left", lambda: run_in_thread(previous_sentence))
+keyboard.wait("esc")
 
-# Використовуємо клавіші для керування
-keyboard.add_hotkey("End", lambda: next_sentence() if index != -1 else next_sentence())  # Перше натискання надрукує "Sentense 1"
-keyboard.add_hotkey("Home", prev_sentence)  # Натискання Home друкує попереднє речення
-keyboard.wait("esc")  # Чекаємо натискання Escape для виходу

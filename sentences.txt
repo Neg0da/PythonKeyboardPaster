@@ -1,5 +1,2 @@
-Sentense 1
-Sentense 2
-Sentense 3
-Htxtyyz 1
-Htxtyyz 2
+EXAMPLE 1
+EXAMPLE 2
