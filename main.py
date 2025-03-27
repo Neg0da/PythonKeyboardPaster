@@ -21,18 +21,25 @@ def load_sentences(filename="sentences.txt"):
     try:
         with open(filename, "r", encoding="utf-8") as f:
             sentences = f.read().strip().split("\n")
-        print(f"Loaded {len(sentences)} sentences from '{filename}'")
+        debug(f"Loaded {len(sentences)} sentences from '{filename}'")
         return sentences
     except FileNotFoundError:
         print(f"Error: '{filename}' not found")
         return []
     
+paste_index = 0
+
 def paste(text: str):
     """Paste sentence."""
     if(config.MAKE_BUFER):
         bufer = pyperclip.paste()
     pyperclip.copy(text)
-    pyautogui.hotkey("ctrl", "shift", "v")
+    if config.PASTE_MODE[0]:
+        pyautogui.hotkey("ctrl", "v")
+    elif config.PASTE_MODE[1]:
+        pyautogui.hotkey("ctrl", "shift", "v")
+    else:
+        debug(f"Unknown PASTE_MODE: {config.PASTE_MODE}")
     if(config.ENTER_AFTER_PASTE):
         pyautogui.press("enter")
     if(config.MAKE_BUFER):
@@ -77,4 +84,3 @@ def run_in_thread(func):
 keyboard.add_hotkey("right", lambda: run_in_thread(next_sentence))
 keyboard.add_hotkey("left", lambda: run_in_thread(previous_sentence))
 keyboard.wait("esc")
-
