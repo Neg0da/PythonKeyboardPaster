@@ -1,3 +1,5 @@
+#main.py
+
 import keyboard
 import pyautogui
 import pyperclip
@@ -7,7 +9,7 @@ import config
 print("Script started")
 
 def debug(*args):
-    """Функція для виведення повідомлення, якщо активний режим DEBUG."""
+    """If DEBUG is enabled - print it in console."""
     if config.DEBUG:
         print(*args)
 
@@ -15,7 +17,7 @@ index = -1
 debug(f"Initial index: {index}")
 
 def load_sentences(filename="sentences.txt"):
-    """Функція для завантаження речень з файлу."""
+    """Loading sentences from file."""
     try:
         with open(filename, "r", encoding="utf-8") as f:
             sentences = f.read().strip().split("\n")
@@ -26,6 +28,7 @@ def load_sentences(filename="sentences.txt"):
         return []
     
 def paste(text: str):
+    """Paste sentence."""
     if(config.MAKE_BUFER):
         bufer = pyperclip.paste()
     pyperclip.copy(text)
@@ -36,7 +39,7 @@ def paste(text: str):
         pyperclip.copy(bufer)
 
 def next_sentence():
-    """Переключається до наступного речення та друкує його."""
+    """Switch to next sentence and paste it."""
     global index
     if index < len(sentences) - 1:
         index += 1
@@ -47,7 +50,7 @@ def next_sentence():
         paste(sentences[index])
 
 def previous_sentence():
-    """Переключається до попереднього речення та друкує його."""
+    """Switch to previous sentence and paste it."""
     global index
     if index > 0:
         index -= 1
@@ -65,8 +68,8 @@ sentences = load_sentences()
 debug(sentences)
 
 print("ESC - to exit")
-print("RIGHT - to type sentence")
-print("LEFT - to type previous sentence")
+print("RIGHT - to paste sentence")
+print("LEFT - to paste previous sentence")
 
 def run_in_thread(func):
     threading.Thread(target=func, daemon=True).start()

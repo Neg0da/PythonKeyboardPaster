@@ -1,6 +1,8 @@
-DEBUG = True
+#config.py
 
-ENTER_AFTER_PASTE = True
-ENTER_BEFORE_PREVIOUS = True
+DEBUG = True # Enable debug messages in console
 
-MAKE_BUFER = False
+ENTER_AFTER_PASTE = True # Press Enter after pasting sentence
+ENTER_BEFORE_PREVIOUS = True # Press Enter before pasting previous sentence
+
+MAKE_BUFER = False # Save current clipboard content
